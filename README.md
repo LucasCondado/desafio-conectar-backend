@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # desafio-conectar-backend
 
 Este é o backend do desafio Conéctar, desenvolvido em NestJS com banco de dados PostgreSQL.
@@ -73,3 +74,6 @@ npm run test
 ---
 
 Desenvolvido para o desafio Conéctar.
+=======
+# desafio-conectar-backend
+>>>>>>> 2534f7044204bf825c96bbab7426d33459ffb797
