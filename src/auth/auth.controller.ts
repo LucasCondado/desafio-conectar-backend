@@ -1,28 +1,20 @@
-import { Controller, Post, Body, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Body, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { AuthGuard } from '@nestjs/passport';
+import { LoginDto } from './dto/login.dto';
+import { ApiBody, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private readonly authService: AuthService) {}
 
+  @ApiBody({ type: LoginDto })
   @Post('login')
-  async login(@Body() data: any) {
-    return this.authService.login(data);
-  }
-
-  @Post('register')
-  async register(@Body() data: any) {
-    return this.authService.register(data);
-  }
-
-  @UseGuards(AuthGuard('jwt'))
-  @Post('change-password')
-  async changePassword(
-    @Req() req,
-    @Body('currentPassword') currentPassword: string,
-    @Body('newPassword') newPassword: string,
-  ) {
-    return this.authService.changePassword(req.user.id, currentPassword, newPassword);
+  async login(@Body() loginDto: LoginDto) {
+    const user = await this.authService.validateUser(loginDto.email, loginDto.password);
+    if (!user) {
+      throw new UnauthorizedException('Email ou senha inválidos');
+    }
+    return this.authService.login(user);
   }
 }

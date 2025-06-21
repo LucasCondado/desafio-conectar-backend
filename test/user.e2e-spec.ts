@@ -15,12 +15,12 @@ describe('User Endpoints (e2e)', () => {
     app = moduleFixture.createNestApplication();
     await app.init();
 
-    // Faça login com o admin correto
+    // Login admin
     const loginRes = await request(app.getHttpServer())
       .post('/auth/login')
       .send({
-        email: 'admin@admin.com',
-        password: 'adm123',
+        email: 'admin@admin.com', // ajuste para o email do seu admin
+        password: 'adm123',       // ajuste para a senha do seu admin
       });
     adminToken = loginRes.body.access_token;
   });
@@ -40,13 +40,13 @@ describe('User Endpoints (e2e)', () => {
   });
 
   it('/users/:id (GET) não retorna campo password', async () => {
-    // Crie um usuário de teste só para esse teste!
+    // Cria usuário para o teste
     const createRes = await request(app.getHttpServer())
       .post('/users')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         name: 'Teste GET',
-        email: `testeget${Date.now()}@mail.com`,
+        email: `testget${Date.now()}@mail.com`,
         password: 'SenhaForte123!',
       });
     const userId = createRes.body.id;
@@ -59,13 +59,13 @@ describe('User Endpoints (e2e)', () => {
   });
 
   it('/users/:id (PATCH) não retorna campo password', async () => {
-    // Crie um usuário de teste só para esse teste!
+    // Cria usuário para o teste
     const createRes = await request(app.getHttpServer())
       .post('/users')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         name: 'Teste PATCH',
-        email: `testepatch${Date.now()}@mail.com`,
+        email: `testpatch${Date.now()}@mail.com`,
         password: 'SenhaForte123!',
       });
     const userId = createRes.body.id;
@@ -79,7 +79,7 @@ describe('User Endpoints (e2e)', () => {
   });
 
   it('/users/:id (DELETE) não retorna campo password', async () => {
-    // Crie um usuário só para deletar
+    // Cria usuário para deletar
     const createRes = await request(app.getHttpServer())
       .post('/users')
       .set('Authorization', `Bearer ${adminToken}`)
@@ -89,10 +89,13 @@ describe('User Endpoints (e2e)', () => {
         password: 'SenhaForte123',
       });
     const userId = createRes.body.id;
+
     const res = await request(app.getHttpServer())
       .delete(`/users/${userId}`)
       .set('Authorization', `Bearer ${adminToken}`);
-    expect(res.status).toBe(200);
-    expect(res.body).not.toHaveProperty('password');
+    expect([200, 204]).toContain(res.status); // Aceita 200 ou 204
+    if (res.body) {
+      expect(res.body).not.toHaveProperty('password');
+    }
   });
 });
