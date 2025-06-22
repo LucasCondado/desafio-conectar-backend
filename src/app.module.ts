@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { User } from './users/entities/user.entity';
+import { AppController } from './app.controller'; // <-- Importação necessária!
 
 @Module({
   imports: [
@@ -14,26 +15,23 @@ import { User } from './users/entities/user.entity';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
-        console.log('DB_HOST:', config.get<string>('DB_HOST'));
-        console.log('DB_PORT:', config.get<string>('DB_PORT'));
-        console.log('DB_USERNAME:', config.get<string>('DB_USERNAME'));
         // Nunca logue senhas em produção!
-
         return {
           type: 'postgres',
           host: config.get<string>('DB_HOST'),
-          port: Number(config.get<string>('DB_PORT')), // Convertendo para número
+          port: Number(config.get<string>('DB_PORT')),
           username: config.get<string>('DB_USERNAME'),
           password: config.get<string>('DB_PASSWORD'),
           database: config.get<string>('DB_DATABASE'),
           entities: [User],
           synchronize: true, // Não usar em produção!
-          ssl: { rejectUnauthorized: false }, // <-- Adicione esta linha!
+          ssl: { rejectUnauthorized: false },
         };
       },
     }),
     UsersModule,
     AuthModule,
   ],
+  controllers: [AppController], // <-- Adicione aqui!
 })
 export class AppModule {}
