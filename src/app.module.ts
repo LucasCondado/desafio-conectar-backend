@@ -14,19 +14,17 @@ import { AppController } from './app.controller';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => {
-        return {
-          type: 'postgres',
-          host: config.get<string>('DB_HOST'),
-          port: Number(config.get<string>('DB_PORT')),
-          username: config.get<string>('DB_USERNAME'),
-          password: config.get<string>('DB_PASSWORD'),
-          database: config.get<string>('DB_DATABASE'),
-          entities: [User],
-          synchronize: true, // Não usar em produção!
-          ssl: { rejectUnauthorized: false },
-        };
-      },
+      useFactory: (config: ConfigService) => ({
+        type: 'postgres',
+        host: config.get<string>('DB_HOST'),
+        port: Number(config.get<string>('DB_PORT')),
+        username: config.get<string>('DB_USERNAME'),
+        password: config.get<string>('DB_PASSWORD'),
+        database: config.get<string>('DB_DATABASE'),
+        entities: [User],
+        synchronize: true, // Não usar em produção!
+        ssl: { rejectUnauthorized: false },
+      }),
     }),
     UsersModule,
     AuthModule,
