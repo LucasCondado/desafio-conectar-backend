@@ -5,10 +5,11 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Like, FindOptionsWhere, Raw } from 'typeorm';
 import { User, Role } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UserQueryDto } from './dto/user-query.dto';
 import * as bcrypt from 'bcryptjs';
 
 @Injectable()
@@ -31,32 +32,75 @@ export class UsersService {
       password: hash,
     });
     const savedUser = await this.usersRepository.save(user);
-    // Nunca retorne a senha
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...userWithoutPassword } = savedUser;
     return userWithoutPassword;
   }
 
-  async findAll(): Promise<Omit<User, 'password'>[]> {
-    const users = await this.usersRepository.find();
-    // Remova a senha do retorno
+  async findAll(query: UserQueryDto = {}): Promise<{
+    data: Omit<User, 'password'>[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    const {
+      name,
+      email,
+      role,
+      sortBy = 'createdAt',
+      order = 'ASC',
+      page = '1',
+      limit = '10',
+    } = query;
+
+    const where: FindOptionsWhere<User> = {};
+    if (name) where.name = Like(`%${name}%`);
+    if (email) where.email = Like(`%${email}%`);
+    if (role) where.role = role;
+
+    const take = Number(limit);
+    const skip = (Number(page) - 1) * take;
+
+    const [users, total] = await this.usersRepository.findAndCount({
+      where,
+      order: {
+        [sortBy]: order.toUpperCase(),
+      },
+      take,
+      skip,
+    });
+
+    return {
+      data: users.map(({ password, ...rest }) => rest),
+      total,
+      page: Number(page),
+      limit: take,
+    };
+  }
+
+  async findInactive(): Promise<Omit<User, 'password'>[]> {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 30);
+
+    const users = await this.usersRepository.find({
+      where: [
+        { lastLoginAt: null },
+        { lastLoginAt: Raw(alias => `${alias} < :cutoff`, { cutoff }) },
+      ],
+    });
     return users.map(({ password, ...rest }) => rest);
   }
 
   async findOne(id: string): Promise<Omit<User, 'password'>> {
     const user = await this.usersRepository.findOne({ where: { id } });
     if (!user) throw new NotFoundException('User not found');
-    // Remova a senha do retorno
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...userWithoutPassword } = user;
     return userWithoutPassword;
   }
 
-  // CORRIGIDO: busca o campo 'password' explicitamente para autenticação!
   async findByEmail(email: string): Promise<User | undefined> {
     return this.usersRepository.findOne({
       where: { email },
-      select: ['id', 'email', 'role', 'password'], // <-- aqui!
+      select: ['id', 'email', 'role', 'password'],
     });
   }
 
@@ -78,7 +122,6 @@ export class UsersService {
     }
     Object.assign(user, updateUserDto);
     const savedUser = await this.usersRepository.save(user);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...userWithoutPassword } = savedUser;
     return userWithoutPassword;
   }

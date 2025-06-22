@@ -10,42 +10,65 @@ import {
   Request,
   NotFoundException,
   ForbiddenException,
+  Query,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UserQueryDto } from './dto/user-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 
-@ApiBearerAuth()
+@ApiTags('users')
+@ApiBearerAuth('access-token')
 @Controller('users')
-@UseGuards(JwtAuthGuard)
-export class UserController {
+export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  @UseGuards(RolesGuard)
+  @ApiOperation({ summary: 'Listar todos os usuários com filtros/paginação/ordenação (apenas admin)' })
+  @ApiQuery({ name: 'role', required: false, enum: ['admin', 'user'] })
+  @ApiQuery({ name: 'name', required: false })
+  @ApiQuery({ name: 'email', required: false })
+  @ApiQuery({ name: 'sortBy', required: false, enum: ['name', 'createdAt'] })
+  @ApiQuery({ name: 'order', required: false, enum: ['ASC', 'DESC'] })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
-  async findAll() {
-    return await this.usersService.findAll();
+  findAll(@Query() query: UserQueryDto) {
+    return this.usersService.findAll(query);
+  }
+
+  @Get('inactive')
+  @ApiOperation({ summary: 'Listar usuários inativos (sem login há 30 dias, apenas admin)' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  findInactive() {
+    return this.usersService.findInactive();
   }
 
   @Post()
-  async create(@Body() createUserDto: CreateUserDto) {
-    return await this.usersService.create(createUserDto);
+  @ApiOperation({ summary: 'Criar novo usuário (público)' })
+  create(@Body() createUserDto: CreateUserDto) {
+    return this.usersService.create(createUserDto);
   }
 
   @Get('me')
-  async getProfile(@Request() req) {
+  @ApiOperation({ summary: 'Obter perfil do usuário autenticado' })
+  @UseGuards(JwtAuthGuard)
+  async getProfile(@Request() req: any) {
     const user = await this.usersService.findOne(req.user.sub);
     if (!user) throw new NotFoundException('Usuário não encontrado');
     return user;
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string, @Request() req) {
+  @ApiOperation({ summary: 'Buscar usuário pelo id (admin ou o próprio usuário)' })
+  @UseGuards(JwtAuthGuard)
+  async findOne(@Param('id') id: string, @Request() req: any) {
     if (req.user.role !== 'admin' && req.user.sub !== id) {
       throw new ForbiddenException('Acesso negado.');
     }
@@ -55,10 +78,12 @@ export class UserController {
   }
 
   @Patch(':id')
+  @ApiOperation({ summary: 'Atualizar usuário (admin ou o próprio usuário)' })
+  @UseGuards(JwtAuthGuard)
   async update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
-    @Request() req,
+    @Request() req: any,
   ) {
     if (req.user.role !== 'admin' && req.user.sub !== id) {
       throw new ForbiddenException('Acesso negado.');
@@ -69,7 +94,9 @@ export class UserController {
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string, @Request() req) {
+  @ApiOperation({ summary: 'Remover usuário (admin ou o próprio usuário)' })
+  @UseGuards(JwtAuthGuard)
+  async remove(@Param('id') id: string, @Request() req: any) {
     if (req.user.role !== 'admin' && req.user.sub !== id) {
       throw new ForbiddenException('Acesso negado.');
     }
