@@ -4,7 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { User } from './users/entities/user.entity';
-import { AppController } from './app.controller'; // <-- Importação necessária!
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -15,7 +15,6 @@ import { AppController } from './app.controller'; // <-- Importação necessári
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
-        // Nunca logue senhas em produção!
         return {
           type: 'postgres',
           host: config.get<string>('DB_HOST'),
@@ -32,6 +31,6 @@ import { AppController } from './app.controller'; // <-- Importação necessári
     UsersModule,
     AuthModule,
   ],
-  controllers: [AppController], // <-- Adicione aqui!
+  controllers: [AppController],
 })
 export class AppModule {}
