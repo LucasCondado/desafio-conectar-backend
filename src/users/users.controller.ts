@@ -53,6 +53,7 @@ export class UsersController {
   @Post()
   @ApiOperation({ summary: 'Criar novo usuário (público)' })
   create(@Body() createUserDto: CreateUserDto) {
+    // Nenhuma alteração aqui, a lógica de proteção está no service!
     return this.usersService.create(createUserDto);
   }
 

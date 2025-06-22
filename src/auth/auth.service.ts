@@ -19,6 +19,9 @@ export class AuthService {
   }
 
   async login(user: any) {
+    // Atualiza o campo lastLoginAt ao fazer login
+    await this.usersService.updateLastLogin(user.id);
+
     const payload = {
       email: user.email,
       role: user.role,

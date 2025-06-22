@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like, FindOptionsWhere, Raw } from 'typeorm';
+import { Repository, Like, FindOptionsWhere, Raw, IsNull } from 'typeorm';
 import { User, Role } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -27,8 +27,10 @@ export class UsersService {
       throw new ConflictException('Email already registered');
     }
     const hash = await bcrypt.hash(createUserDto.password, 10);
+    // Força sempre a role para 'user', ignorando o que vier no DTO
     const user = this.usersRepository.create({
       ...createUserDto,
+      role: Role.USER, // Corrigido para usar enum
       password: hash,
     });
     const savedUser = await this.usersRepository.save(user);
@@ -83,7 +85,7 @@ export class UsersService {
 
     const users = await this.usersRepository.find({
       where: [
-        { lastLoginAt: null },
+        { lastLoginAt: IsNull() }, // Corrigido para usar IsNull()
         { lastLoginAt: Raw(alias => `${alias} < :cutoff`, { cutoff }) },
       ],
     });
@@ -97,7 +99,7 @@ export class UsersService {
     return userWithoutPassword;
   }
 
-  async findByEmail(email: string): Promise<User | undefined> {
+  async findByEmail(email: string): Promise<User | null> { // Corrigido: Promise<User | null> para refletir TypeORM
     return this.usersRepository.findOne({
       where: { email },
       select: ['id', 'email', 'role', 'password'],

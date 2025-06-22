@@ -4,6 +4,12 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
 
+interface JwtPayload {
+  sub: string;
+  email: string;
+  role: string;
+}
+
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   private readonly logger = new Logger(JwtStrategy.name);
@@ -12,15 +18,20 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private configService: ConfigService,
     private usersService: UsersService
   ) {
+    const jwtSecret = configService.get<string>('JWT_SECRET');
+    if (!jwtSecret) {
+      throw new Error('JWT_SECRET is not defined in environment variables');
+    }
+
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET'),
+      secretOrKey: jwtSecret,
     });
   }
 
-  async validate(payload: any) {
-    this.logger.debug('Validando payload JWT:', payload);
+  async validate(payload: JwtPayload) {
+    this.logger.debug(`Validando payload JWT: ${JSON.stringify(payload)}`);
 
     // Verifica se o token tem os campos essenciais
     if (!payload || !payload.email || !payload.sub) {
