@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, Role } from './entities/user.entity';
@@ -13,51 +18,79 @@ export class UsersService {
     private usersRepository: Repository<User>,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
-    const userExists = await this.usersRepository.findOne({ where: { email: createUserDto.email } });
+  async create(createUserDto: CreateUserDto): Promise<Omit<User, 'password'>> {
+    const userExists = await this.usersRepository.findOne({
+      where: { email: createUserDto.email },
+    });
     if (userExists) {
       throw new ConflictException('Email already registered');
     }
     const hash = await bcrypt.hash(createUserDto.password, 10);
-    const user = this.usersRepository.create({ ...createUserDto, password: hash });
-    return this.usersRepository.save(user);
+    const user = this.usersRepository.create({
+      ...createUserDto,
+      password: hash,
+    });
+    const savedUser = await this.usersRepository.save(user);
+    // Nunca retorne a senha
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, ...userWithoutPassword } = savedUser;
+    return userWithoutPassword;
   }
 
-  async findAll(): Promise<User[]> {
-    return this.usersRepository.find();
+  async findAll(): Promise<Omit<User, 'password'>[]> {
+    const users = await this.usersRepository.find();
+    // Remova a senha do retorno
+    return users.map(({ password, ...rest }) => rest);
   }
 
-  async findOne(id: string): Promise<User> {
+  async findOne(id: string): Promise<Omit<User, 'password'>> {
     const user = await this.usersRepository.findOne({ where: { id } });
     if (!user) throw new NotFoundException('User not found');
-    return user;
+    // Remova a senha do retorno
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, ...userWithoutPassword } = user;
+    return userWithoutPassword;
   }
 
+  // CORRIGIDO: busca o campo 'password' explicitamente para autenticação!
   async findByEmail(email: string): Promise<User | undefined> {
-    const user = await this.usersRepository.findOne({ where: { email } });
-    return user === null ? undefined : user;
+    return this.usersRepository.findOne({
+      where: { email },
+      select: ['id', 'email', 'role', 'password'], // <-- aqui!
+    });
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto, reqUser: User): Promise<User> {
+  async update(
+    id: string,
+    updateUserDto: UpdateUserDto,
+    reqUser: User,
+  ): Promise<Omit<User, 'password'>> {
     if (reqUser.role !== Role.ADMIN && reqUser.id !== id) {
       throw new ForbiddenException('Not allowed');
     }
-    const user = await this.findOne(id);
+    const user = await this.usersRepository.findOne({ where: { id } });
+    if (!user) throw new NotFoundException('User not found');
+
     if (updateUserDto.password) {
       updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
     } else {
       delete updateUserDto.password;
     }
     Object.assign(user, updateUserDto);
-    return this.usersRepository.save(user);
+    const savedUser = await this.usersRepository.save(user);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, ...userWithoutPassword } = savedUser;
+    return userWithoutPassword;
   }
 
-  async remove(id: string, reqUser: User): Promise<void> {
+  async remove(id: string, reqUser: User): Promise<{ message: string }> {
     if (reqUser.role !== Role.ADMIN && reqUser.id !== id) {
       throw new ForbiddenException('Not allowed');
     }
-    const user = await this.findOne(id);
+    const user = await this.usersRepository.findOne({ where: { id } });
+    if (!user) throw new NotFoundException('User not found');
     await this.usersRepository.remove(user);
+    return { message: 'Usuário removido com sucesso' };
   }
 
   async updateLastLogin(id: string): Promise<void> {

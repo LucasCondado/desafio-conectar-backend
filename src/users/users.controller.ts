@@ -8,6 +8,8 @@ import {
   Delete,
   UseGuards,
   Request,
+  NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -15,62 +17,62 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
+@ApiBearerAuth()
 @Controller('users')
+@UseGuards(JwtAuthGuard)
 export class UserController {
   constructor(private readonly usersService: UsersService) {}
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
   @Get()
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   async findAll() {
-    const users = await this.usersService.findAll();
-    return users.map(({ password, ...rest }) => rest);
+    return await this.usersService.findAll();
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard)
   async create(@Body() createUserDto: CreateUserDto) {
-    const user = await this.usersService.create(createUserDto);
-    const { password, ...rest } = user;
-    return rest;
+    return await this.usersService.create(createUserDto);
   }
 
-  // --- AQUI: /users/me DEVE VIR ANTES DE /users/:id ---
-  @UseGuards(JwtAuthGuard)
   @Get('me')
   async getProfile(@Request() req) {
-    // Use req.user.sub pois é o ID vindo do JWT
     const user = await this.usersService.findOne(req.user.sub);
-    if (!user) return null;
-    const { password, ...rest } = user;
-    return rest;
+    if (!user) throw new NotFoundException('Usuário não encontrado');
+    return user;
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get(':id')
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string, @Request() req) {
+    if (req.user.role !== 'admin' && req.user.sub !== id) {
+      throw new ForbiddenException('Acesso negado.');
+    }
     const user = await this.usersService.findOne(id);
-    if (!user) return null;
-    const { password, ...rest } = user;
-    return rest;
+    if (!user) throw new NotFoundException('Usuário não encontrado');
+    return user;
   }
 
-  @UseGuards(JwtAuthGuard)
   @Patch(':id')
   async update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
     @Request() req,
   ) {
+    if (req.user.role !== 'admin' && req.user.sub !== id) {
+      throw new ForbiddenException('Acesso negado.');
+    }
     const user = await this.usersService.update(id, updateUserDto, req.user);
-    const { password, ...rest } = user;
-    return rest;
+    if (!user) throw new NotFoundException('Usuário não encontrado');
+    return user;
   }
 
-  @UseGuards(JwtAuthGuard)
   @Delete(':id')
   async remove(@Param('id') id: string, @Request() req) {
+    if (req.user.role !== 'admin' && req.user.sub !== id) {
+      throw new ForbiddenException('Acesso negado.');
+    }
     await this.usersService.remove(id, req.user);
     return { message: 'Usuário removido com sucesso' };
   }
