@@ -6,6 +6,16 @@ async function bootstrap() {
   try {
     const app = await NestFactory.create(AppModule);
 
+    // CONFIGURAÇÃO DE CORS
+    app.enableCors({
+      origin: [
+        'http://localhost:3000',
+        'http://localhost:3001',
+        // 'https://SEU_FRONTEND.vercel.app', // adicione aqui se tiver frontend online
+      ],
+      credentials: true,
+    });
+
     // Configuração do Swagger
     const config = new DocumentBuilder()
       .setTitle('API Conectar')
@@ -27,11 +37,9 @@ async function bootstrap() {
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api', app, document);
 
-    // Permite que o Heroku (ou outras plataformas) use qualquer porta definida na env
     const port = process.env.PORT || 3000;
     await app.listen(port);
 
-    // Exibe a URL correta no console (útil para debug local)
     console.log(`API rodando em: http://localhost:${port}/api`);
   } catch (err) {
     console.error('Fatal error on bootstrap:', err);
