@@ -1,31 +1,36 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { ExpressAdapter } from '@nestjs/platform-express';
-import * as express from 'express';
 
-export async function createNestServer(expressInstance = express()) {
-  const app = await NestFactory.create(AppModule, new ExpressAdapter(expressInstance));
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
 
-  // Configuração Swagger
+  // Configuração do Swagger
   const config = new DocumentBuilder()
     .setTitle('API Conectar')
     .setDescription('Documentação da API do desafio')
     .setVersion('1.0')
-    .addBearerAuth()
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'Authorization',
+        description: 'Insira apenas o token JWT. O prefixo \"Bearer\" será adicionado automaticamente.',
+        in: 'header',
+      },
+      'access-token', // nome do esquema, use igual em @ApiBearerAuth('access-token')
+    )
     .build();
+
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  await app.init();
-  return expressInstance;
+  // Use a porta do Heroku, ou 3000 localmente
+  const port = process.env.PORT || 3000;
+  await app.listen(port);
+
+  console.log(`Listening on http://localhost:${port}`);
 }
 
-// Para rodar localmente:
-if (require.main === module) {
-  createNestServer().then(app => {
-    app.listen(3000, () => {
-      console.log('Listening on http://localhost:3000');
-    });
-  });
-}
+bootstrap();
