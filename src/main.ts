@@ -8,6 +8,7 @@ async function bootstrap() {
 
     app.enableCors({
       origin: [
+        'https://teste-conectar-frontend.herokuapp.com',
         'https://teste-conectar-frontend-101826e3b3e5.herokuapp.com',
         'http://localhost:3000',
         'http://localhost:3001',
