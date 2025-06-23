@@ -5,17 +5,26 @@ import {
   UnauthorizedException,
   BadRequestException,
   Logger,
+  Get,
+  UseGuards,
+  Req,
+  Res,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { ApiBody, ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
+import { UsersService } from '../users/users.service';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
 
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly usersService: UsersService,
+  ) {}
 
   @ApiBody({ type: LoginDto })
   @ApiOperation({ summary: 'Realiza login e retorna o token JWT' })
@@ -46,4 +55,8 @@ export class AuthController {
     this.logger.log(`Login efetuado: ${loginDto.email} (id: ${user.id})`);
     return this.authService.login(user);
   }
+
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  async googleAuth() {}
 }

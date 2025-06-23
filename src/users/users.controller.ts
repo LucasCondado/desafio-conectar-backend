@@ -11,7 +11,9 @@ import {
   NotFoundException,
   ForbiddenException,
   Query,
+  Res,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -20,12 +22,16 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { ApiBearerAuth, ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { AuthService } from '../auth/auth.service';
 
 @ApiTags('users')
 @ApiBearerAuth('access-token')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private authService: AuthService, // <-- Adicionado AuthService aqui
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Listar todos os usuários com filtros/paginação/ordenação (apenas admin)' })
@@ -51,23 +57,34 @@ export class UsersController {
   }
 
   @Post()
-  @ApiOperation({ summary: 'Criar novo usuário (público)' })
-  async create(@Body() createUserDto: CreateUserDto) {
+  @ApiOperation({ summary: 'Criar novo usuário (apenas admin)' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  async create(@Body() createUserDto: CreateUserDto, @Request() req) {
     return await this.usersService.create(createUserDto);
+  }
+
+  @Post('completar-cadastro')
+  async completarCadastro(@Body() dados: CreateUserDto, @Res() res) {
+    await this.usersService.create(dados);
+
+    // Busque o usuário completo do banco (com id)
+    const user = await this.usersService.findByEmail(dados.email);
+    console.log('Usuário retornado do banco após cadastro:', user); // <-- Veja o que aparece aqui
+
+    // Gere o token usando o user do banco
+    const token = await this.authService.login(user);
+
+    // Retorne o token para o frontend
+    return res.json(token);
   }
 
   @Get('me')
   @ApiOperation({ summary: 'Obter perfil do usuário autenticado' })
-  @UseGuards(JwtAuthGuard)
-  async getProfile(@Request() req: any) {
-    // LOGS DE DEPURAÇÃO:
-    console.log('REQ.USER em /users/me:', req.user);
-    const userId = req.user.sub;
-    console.log('ID extraído do JWT:', userId);
-    const user = await this.usersService.findOne(userId);
-    console.log('USUÁRIO ENCONTRADO:', user);
-    if (!user) throw new NotFoundException('Usuário não encontrado');
-    return user;
+  @UseGuards(AuthGuard('jwt'))
+  async getMe(@Request() req) {
+    console.log('Chamou /users/me com sub:', req.user.sub); // <-- Adicione esta linha
+    return this.usersService.findOne(req.user.sub);
   }
 
   @Get(':id')
@@ -105,7 +122,7 @@ export class UsersController {
     if (req.user.role !== 'admin' && req.user.sub !== id) {
       throw new ForbiddenException('Acesso negado.');
     }
-    await this.usersService.remove(id, req.user);
-    return { message: 'Usuário removido com sucesso' };
+    // Retorne o usuário deletado sem o campo password
+    return await this.usersService.remove(id, req.user);
   }
 }

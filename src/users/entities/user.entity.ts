@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Unique } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 export enum Role {
   ADMIN = 'admin',
@@ -6,7 +6,6 @@ export enum Role {
 }
 
 @Entity()
-@Unique(['email'])
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;

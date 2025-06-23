@@ -1,26 +1,32 @@
-# Desafio Conectar - Backend
+# desafio-conectar-backend
 
-Este é o backend do desafio para desenvolvedor pleno, feito em [NestJS](https://nestjs.com/) utilizando banco de dados PostgreSQL e TypeORM.  
-A API está pronta para integração com o frontend e já possui documentação automática pelo Swagger.
+Backend do desafio Conéctar, desenvolvido em [NestJS](https://nestjs.com/) com PostgreSQL e TypeORM.
 
 ## 🚀 Tecnologias
 
 - [NestJS](https://nestjs.com/)
+- [TypeScript](https://www.typescriptlang.org/)
 - [PostgreSQL](https://www.postgresql.org/)
 - [TypeORM](https://typeorm.io/)
 - [Swagger](https://swagger.io/)
 
 ## 📦 Deploy
 
-- **Render:** [https://desafio-conectar-backend-bwg7.onrender.com/api](https://desafio-conectar-backend-bwg7.onrender.com/api)
-- **Heroku:** [https://teste-conectar-e2517ff452cd.herokuapp.com/api](https://teste-conectar-e2517ff452cd.herokuapp.com/api)
+- **Heroku:** [https://teste-conectar-back-da3221d35049.herokuapp.com/](https://teste-conectar-back-da3221d35049.herokuapp.com/)
+- **Swagger:** [https://teste-conectar-back-da3221d35049.herokuapp.com/api](https://teste-conectar-back-da3221d35049.herokuapp.com/api)
+
+## 👤 Usuário de Teste
+
+- **Admin:**  
+  Email: `admin@admin.com`  
+  Senha: `adm123`
 
 ## 🧑‍💻 Como rodar localmente
 
 1. **Clone o repositório:**
    ```sh
-   git clone <url-do-repo>
-   cd backend
+   git clone https://github.com/LucasCondado/desafio-conectar-backend.git
+   cd desafio-conectar-backend
    ```
 
 2. **Instale as dependências:**
@@ -50,34 +56,7 @@ A API está pronta para integração com o frontend e já possui documentação 
    ```
 
 6. **Acesse a documentação Swagger:**  
-   [http://localhost:3000/api](http://localhost:3000/api)
-
-## 🌐 Integração com o Frontend
-
-No frontend, utilize a URL base do backend para fazer requisições à API:
-
-- **Render:**  
-  ```
-  https://desafio-conectar-backend-bwg7.onrender.com
-  ```
-
-- **Heroku:**  
-  ```
-  https://teste-conectar-e2517ff452cd.herokuapp.com
-  ```
-
-**Exemplo de requisição no frontend (axios):**
-```javascript
-const api = axios.create({
-  baseURL: "https://desafio-conectar-backend-bwg7.onrender.com"
-});
-
-api.get("/api/users").then(res => {
-  console.log(res.data);
-});
-```
-
-> Lembre-se: para acessar a documentação e testar endpoints manualmente, acesse `/api` na URL base.
+   [http://localhost:3001/api](http://localhost:3001/api)
 
 ## 🔐 Variáveis de ambiente
 
@@ -90,13 +69,34 @@ api.get("/api/users").then(res => {
 | DB_DATABASE  | Nome do banco                  | conectar          |
 | JWT_SECRET   | Segredo para autenticação JWT  | umsegredosecreto  |
 
+## 🌐 Integração com o Frontend
+
+O frontend consome a API deste backend.  
+A URL base deve ser configurada na variável `REACT_APP_API_URL` do frontend.
+
 ## 📄 Documentação da API
 
-Acesse o Swagger:
+Acesse o Swagger para ver todos os endpoints, exemplos de payload e respostas:
 
-- **Render:** [https://desafio-conectar-backend-bwg7.onrender.com/api](https://desafio-conectar-backend-bwg7.onrender.com/api)
-- **Heroku:** [https://teste-conectar-e2517ff452cd.herokuapp.com/api](https://teste-conectar-e2517ff452cd.herokuapp.com/api)
+- [https://teste-conectar-back-da3221d35049.herokuapp.com/api](https://teste-conectar-back-da3221d35049.herokuapp.com/api)
 
+## 🧪 Testes
+
+Execute os testes automatizados:
+
+```sh
+npm run test:e2e
+```
+
+## 🤝 Contribuição
+
+Sinta-se livre para abrir issues ou pull requests!
+
+## 👨‍💻 Autor
+
+- Lucas Condado
+
+---
 Lá você encontra todos os endpoints, exemplos de payload e respostas.
 
 ## 🤝 Contribuição

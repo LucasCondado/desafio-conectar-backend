@@ -11,10 +11,7 @@ console.log('DB_DATABASE:', process.env.DB_DATABASE);
 console.log('DB_SSL:', process.env.DB_SSL);
 console.log('========================================');
 
-// Converta DB_SSL para booleano corretamente
-const dbSSL = process.env.DB_SSL === 'true';
-
-export const AppDataSource = new DataSource({
+const AppDataSource = new DataSource({
   type: 'postgres',
   host: process.env.DB_HOST,
   port: Number(process.env.DB_PORT) || 5432,
@@ -24,5 +21,7 @@ export const AppDataSource = new DataSource({
   entities: [User], // Adicione outras entidades aqui conforme necessário
   migrations: [__dirname + '/../migrations/*{.ts,.js}'],
   synchronize: false,
-  ssl: dbSSL ? { rejectUnauthorized: false } : false,
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
 });
+
+export default AppDataSource;

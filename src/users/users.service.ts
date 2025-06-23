@@ -22,25 +22,14 @@ export class UsersService {
   ) {}
 
   // Cria usuário novo, garantindo e-mail único e senha hash
-  async create(createUserDto: CreateUserDto): Promise<UserSafe> {
-    const userExists = await this.usersRepository.findOne({
-      where: { email: createUserDto.email },
-    });
-    if (userExists) {
-      throw new ConflictException('Email already registered');
+  async create(createUserDto: CreateUserDto): Promise<User> {
+    const exists = await this.usersRepository.findOne({ where: { email: createUserDto.email } });
+    if (exists) throw new ConflictException('E-mail já cadastrado');
+    if (createUserDto.password) {
+      createUserDto.password = await bcrypt.hash(createUserDto.password, 10);
     }
-    const hash = await bcrypt.hash(createUserDto.password, 10);
-
-    const user = this.usersRepository.create({
-      ...createUserDto,
-      role: createUserDto.role ?? Role.USER,
-      password: hash,
-    });
-    const savedUser = await this.usersRepository.save(user);
-    // Remove password do retorno
-    // @ts-ignore
-    const { password, ...userWithoutPassword } = savedUser as User;
-    return userWithoutPassword;
+    const user = this.usersRepository.create(createUserDto);
+    return this.usersRepository.save(user);
   }
 
   // Busca paginada, filtrada, ordenada e sem campo password
@@ -101,18 +90,19 @@ export class UsersService {
 
   // Busca usuário por id (safe)
   async findOne(id: string): Promise<UserSafe> {
+    console.log('Buscando usuário por id:', id);
     const user = await this.usersRepository.findOne({ where: { id } });
+    console.log('Usuário retornado:', user);
     if (!user) throw new NotFoundException('User not found');
     const { password, ...userWithoutPassword } = user;
     return userWithoutPassword;
   }
 
   // Busca usuário por e-mail para autenticação (inclui senha)
-  async findByEmail(email: string): Promise<User | null> {
-    return this.usersRepository.findOne({
-      where: { email },
-      select: ['id', 'email', 'role', 'password', 'name'],
-    });
+  async findByEmail(email: string): Promise<User | undefined> {
+    const user = await this.usersRepository.findOne({ where: { email } });
+    console.log('findByEmail retornou:', user); // <-- Adicione esta linha
+    return user;
   }
 
   // Atualiza usuário (apenas se admin ou dono), com hash de senha se mudou
@@ -139,14 +129,16 @@ export class UsersService {
   }
 
   // Remove usuário (apenas admin ou dono)
-  async remove(id: string, reqUser: User): Promise<{ message: string }> {
+  async remove(id: string, reqUser: User): Promise<UserSafe | { message: string }> {
     if (reqUser.role !== Role.ADMIN && reqUser.id !== id) {
       throw new ForbiddenException('Not allowed');
     }
     const user = await this.usersRepository.findOne({ where: { id } });
     if (!user) throw new NotFoundException('User not found');
     await this.usersRepository.remove(user);
-    return { message: 'Usuário removido com sucesso' };
+    // Retorne o usuário sem o campo password (para testes e2e)
+    const { password, ...userWithoutPassword } = user;
+    return userWithoutPassword;
   }
 
   // Atualiza o lastLoginAt

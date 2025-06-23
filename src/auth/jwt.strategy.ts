@@ -49,7 +49,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     // Log de sucesso
     this.logger.debug(`Usuário autenticado: ${user.email}`);
 
-    // Retorne 'sub', não 'userId'!
     return {
       sub: payload.sub,
       email: payload.email,
