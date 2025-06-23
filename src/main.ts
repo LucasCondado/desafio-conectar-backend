@@ -10,6 +10,7 @@ async function bootstrap() {
       origin: [
         'https://teste-conectar-frontend.herokuapp.com',
         'https://teste-conectar-frontend-101826e3b3e5.herokuapp.com',
+        'https://teste-conectar-frontend-4bb0da60444e.herokuapp.com',
         'http://localhost:3000',
         'http://localhost:3001',
       ],
