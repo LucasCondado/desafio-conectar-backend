@@ -6,17 +6,15 @@ async function bootstrap() {
   try {
     const app = await NestFactory.create(AppModule);
 
-    // CONFIGURAÇÃO DE CORS
     app.enableCors({
       origin: [
+        'https://teste-conectar-frontend-101826e3b3e5.herokuapp.com',
         'http://localhost:3000',
         'http://localhost:3001',
-        // 'https://SEU_FRONTEND.vercel.app', // adicione aqui se tiver frontend online
       ],
       credentials: true,
     });
 
-    // Configuração do Swagger
     const config = new DocumentBuilder()
       .setTitle('API Conectar')
       .setDescription('Documentação da API do desafio')
@@ -37,7 +35,7 @@ async function bootstrap() {
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api', app, document);
 
-    const port = process.env.PORT || 3000;
+    const port = process.env.PORT || 3001;
     await app.listen(port);
 
     console.log(`API rodando em: http://localhost:${port}/api`);

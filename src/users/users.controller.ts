@@ -38,7 +38,7 @@ export class UsersController {
   @ApiQuery({ name: 'limit', required: false })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
-  findAll(@Query() query: UserQueryDto) {
+  async findAll(@Query() query: UserQueryDto) {
     return this.usersService.findAll(query);
   }
 
@@ -46,22 +46,26 @@ export class UsersController {
   @ApiOperation({ summary: 'Listar usuários inativos (sem login há 30 dias, apenas admin)' })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
-  findInactive() {
+  async findInactive() {
     return this.usersService.findInactive();
   }
 
   @Post()
   @ApiOperation({ summary: 'Criar novo usuário (público)' })
-  create(@Body() createUserDto: CreateUserDto) {
-    // Nenhuma alteração aqui, a lógica de proteção está no service!
-    return this.usersService.create(createUserDto);
+  async create(@Body() createUserDto: CreateUserDto) {
+    return await this.usersService.create(createUserDto);
   }
 
   @Get('me')
   @ApiOperation({ summary: 'Obter perfil do usuário autenticado' })
   @UseGuards(JwtAuthGuard)
   async getProfile(@Request() req: any) {
-    const user = await this.usersService.findOne(req.user.sub);
+    // LOGS DE DEPURAÇÃO:
+    console.log('REQ.USER em /users/me:', req.user);
+    const userId = req.user.sub;
+    console.log('ID extraído do JWT:', userId);
+    const user = await this.usersService.findOne(userId);
+    console.log('USUÁRIO ENCONTRADO:', user);
     if (!user) throw new NotFoundException('Usuário não encontrado');
     return user;
   }
