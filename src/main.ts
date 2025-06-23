@@ -1,6 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { join } from 'path';
+import * as express from 'express';
 
 async function bootstrap() {
   try {
@@ -8,7 +10,7 @@ async function bootstrap() {
 
     app.enableCors({
       origin: [
-        'https://teste-conectar-frontend.herokuapp.com',
+        'https://teste-conectar-frontend-4bb0da60444e.herokuapp.com',
         'http://localhost:3000',
         'http://localhost:3001',
       ],
@@ -34,6 +36,14 @@ async function bootstrap() {
 
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api', app, document);
+
+    // Serve o build do React como estático
+    app.use(express.static(join(__dirname, '..', '..', 'frontend', 'build')));
+
+    // Fallback para SPA (React Router)
+    app.get('*', (req, res) => {
+      res.sendFile(join(__dirname, '..', '..', 'frontend', 'build', 'index.html'));
+    });
 
     const port = process.env.PORT || 3001;
     await app.listen(port);
