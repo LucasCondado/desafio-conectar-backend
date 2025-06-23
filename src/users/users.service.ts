@@ -89,20 +89,15 @@ export class UsersService {
   }
 
   // Busca usuário por id (safe)
-  async findOne(id: string): Promise<UserSafe> {
-    console.log('Buscando usuário por id:', id);
+  async findOne(id: string): Promise<User | undefined> {
     const user = await this.usersRepository.findOne({ where: { id } });
-    console.log('Usuário retornado:', user);
-    if (!user) throw new NotFoundException('User not found');
-    const { password, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+    return user || undefined;
   }
 
   // Busca usuário por e-mail para autenticação (inclui senha)
   async findByEmail(email: string): Promise<User | undefined> {
     const user = await this.usersRepository.findOne({ where: { email } });
-    console.log('findByEmail retornou:', user); // <-- Adicione esta linha
-    return user;
+    return user || undefined;
   }
 
   // Atualiza usuário (apenas se admin ou dono), com hash de senha se mudou

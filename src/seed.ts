@@ -18,7 +18,7 @@ async function bootstrap() {
       email: adminEmail,
       name: adminName,
       password: await bcrypt.hash(adminPassword, 10),
-      role: Role.ADMIN, // <--- aqui é o segredo!
+      role: Role.ADMIN,
     });
     console.log('Usuário admin criado!');
   } else {

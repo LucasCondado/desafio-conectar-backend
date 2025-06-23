@@ -5,7 +5,6 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './jwt.strategy';
 import { UsersModule } from '../users/users.module';
-import { GoogleStrategy } from './google.strategy'; // <-- ADICIONE ESTA LINHA
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
@@ -26,7 +25,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
   providers: [
     AuthService,
     JwtStrategy,
-    GoogleStrategy, // <-- ADICIONE ESTA LINHA
+    // Remova GoogleStrategy do array de providers, se existir
   ],
   exports: [AuthService], // <-- Adicione esta linha
 })

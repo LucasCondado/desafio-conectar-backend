@@ -96,7 +96,9 @@ export class UsersController {
     }
     const user = await this.usersService.findOne(id);
     if (!user) throw new NotFoundException('Usuário não encontrado');
-    return user;
+    // Remova o campo password antes de retornar
+    const { password, ...userWithoutPassword } = user;
+    return userWithoutPassword;
   }
 
   @Patch(':id')
